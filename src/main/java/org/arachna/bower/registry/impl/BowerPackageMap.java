@@ -4,6 +4,8 @@
 package org.arachna.bower.registry.impl;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -20,11 +22,12 @@ public class BowerPackageMap implements BowerRegistry {
     /**
      * Map of registered bower packages.
      */
+    // FIXME: use ehcache
     private final ConcurrentMap<String, BowerPackage> packages = new ConcurrentHashMap<String, BowerPackage>();
 
     @Override
     public Collection<BowerPackage> getAllPackages() {
-        return packages.values();
+        return Collections.unmodifiableCollection(packages.values());
     }
 
     @Override
@@ -41,10 +44,21 @@ public class BowerPackageMap implements BowerRegistry {
 
     @Override
     public Collection<BowerPackage> search(final String packageName) {
+        final Collection<BowerPackage> allPackages = getAllPackages();
+
         if (StringUtils.isEmpty(packageName)) {
-            return getAllPackages();
+            return allPackages;
         }
 
-        return null;
+        final StringContainedInPackageNameFilter filter = new StringContainedInPackageNameFilter(packageName);
+        final Collection<BowerPackage> matches = new LinkedList<BowerPackage>();
+
+        for (final BowerPackage bowerPackage : allPackages) {
+            if (filter.accept(bowerPackage)) {
+                matches.add(bowerPackage);
+            }
+        }
+
+        return matches;
     }
 }
