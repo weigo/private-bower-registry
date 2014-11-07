@@ -3,11 +3,16 @@
  */
 package org.arachna.bower.registry.impl;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.ws.rs.core.MediaType;
 
+import org.apache.commons.lang3.StringUtils;
 import org.arachna.bower.registry.BowerPackage;
 import org.arachna.bower.registry.BowerRegistry;
 import org.arachna.bower.registry.model.BowerPackageDescriptor;
@@ -28,15 +33,55 @@ import com.sun.jersey.api.client.WebResource;
  */
 public class RemoteBowerRegistry implements BowerRegistry {
     /**
-     *
+     * URL to global bower registry.
      */
-    // FIXME: this should support setting the registry to query in the constructor.
-    private static final String GLOBAL_BOWER_REGISTRY = "https://bower.herokuapp.com/packages";
+    public static final String GLOBAL_BOWER_REGISTRY = "https://bower.herokuapp.com/packages";
+
+    /**
+     * REST client to use for querying the remote bower registry.
+     */
     private final Client client = Client.create();
+
+    /**
+     * URL to remote bower registry given in the constructor.
+     */
+    private final String remoteRegistryUrl;
+
+    /**
+     * Create an instance of a remote bower registry using the given URL.
+     * 
+     * @param remoteRegistryUrl URL to remote bower registry.
+     */
+    public RemoteBowerRegistry(String remoteRegistryUrl) {
+        if (StringUtils.isEmpty(remoteRegistryUrl)) {
+            throw new IllegalArgumentException("remote bower repository URL must not be empty!");
+        }
+        URL url = null;
+
+        try {
+            url = new URL(remoteRegistryUrl);
+
+            if (!(url.getProtocol().matches("https?"))) {
+                throw new IllegalArgumentException("remote bower repository URL must use http or https as protocol!");
+            }
+        }
+        catch (MalformedURLException e) {
+            throw new IllegalArgumentException(e);
+        }
+
+        this.remoteRegistryUrl = remoteRegistryUrl;
+    }
+
+    /**
+     * Create an instance of a remote bower registry using {@see #GLOBAL_BOWER_REGISTRY}.
+     */
+    public RemoteBowerRegistry() {
+        this(GLOBAL_BOWER_REGISTRY);
+    }
 
     @Override
     public Collection<BowerPackage> getAllPackages() {
-        final WebResource resource = client.resource(GLOBAL_BOWER_REGISTRY);
+        final WebResource resource = client.resource(remoteRegistryUrl);
         final Collection<BowerPackage> packages = new LinkedList<BowerPackage>();
 
         try {
@@ -48,16 +93,16 @@ public class RemoteBowerRegistry implements BowerRegistry {
             }
         }
         catch (final UniformInterfaceException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE,
+                String.format("There was an error fetching the list of all packages from %s.", this.remoteRegistryUrl), e);
         }
         catch (final ClientHandlerException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE,
+                String.format("There was an error fetching the list of all packages from %s.", this.remoteRegistryUrl), e);
         }
         catch (final JSONException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE,
+                String.format("There was an error transforming the list of packages from %s to JSON.", this.remoteRegistryUrl), e);
         }
 
         return packages;
