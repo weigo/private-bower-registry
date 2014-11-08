@@ -25,5 +25,5 @@ public interface BowerPackage {
      *
      * @return The URL of repository as String.
      */
-    String getURL();
+    String getUrl();
 }

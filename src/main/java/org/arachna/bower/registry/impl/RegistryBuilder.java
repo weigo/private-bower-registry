@@ -13,6 +13,7 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.lang3.StringUtils;
 import org.arachna.bower.registry.BowerRegistry;
 
 /**
@@ -27,19 +28,27 @@ public class RegistryBuilder {
      * @return a bower registry using a file backed registry and the remote bower registry from the configuration file.
      */
     public BowerRegistry build() {
-        File registryHomeDir = new File(System.getProperty("org.arachna.bower.registry.home", "java.io.tmpdir"));
+        String home = System.getProperty("org.arachna.bower.registry.home");
+
+        if (StringUtils.isEmpty(home)) {
+            home = System.getProperty("java.io.tmpdir");
+        }
+
+        File registryHomeDir = new File(home);
         File registryBaseDir = new File(registryHomeDir, "/registry");
 
         createFolderIfNotExistantAndVerify(registryHomeDir);
         createFolderIfNotExistantAndVerify(registryBaseDir);
 
         Properties config = new Properties();
+        File configurationFile = new File(registryHomeDir, "PrivateBowerRegistry.properties");
 
         try {
-            config = readConfiguration(new FileReader(new File(registryHomeDir, "PrivateBowerRegistry.properties")));
+            config = readConfiguration(new FileReader(configurationFile));
         }
         catch (IOException e) {
-            Logger.getLogger(getClass().getName()).log(Level.SEVERE, "", e);
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE,
+                String.format("Could not read registry configuration file '%s'! Using defaults.", configurationFile.getAbsolutePath()), e);
         }
 
         return new Registry(readPersistedPackages(registryBaseDir), createRemoteRegistries(config));
@@ -54,10 +63,11 @@ public class RegistryBuilder {
      */
     private Collection<BowerRegistry> createRemoteRegistries(Properties config) {
         Collection<BowerRegistry> registries = new LinkedList<BowerRegistry>();
-
+        String proxyUrl = config.getProperty("proxyUrl");
+        
         for (String registry : config.getProperty("remote.registries", RemoteBowerRegistry.GLOBAL_BOWER_REGISTRY).split(",")) {
             try {
-                registries.add(new RemoteBowerRegistry(registry));
+                registries.add(new RemoteBowerRegistry(registry, proxyUrl));
             }
             catch (IllegalArgumentException e) {
                 Logger.getLogger(getClass().getName()).log(Level.SEVERE, "An error occured configuring the remote bower repositories.", e);

@@ -5,7 +5,7 @@ package org.arachna.bower.registry.rest;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.List;
+import java.net.UnknownHostException;
 
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
@@ -13,7 +13,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
@@ -57,9 +56,15 @@ public class BowerRegistryRestService {
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    Response getAllPackages() {
-        final ResponseBuilder builder = Response.ok();
-        builder.entity(registry.getAllPackages());
+    public Response getAllPackages() {
+        ResponseBuilder builder = Response.ok();
+
+        try {
+            builder.entity(registry.getAllPackages());
+        }
+        catch (Exception e) {
+            builder = Response.status(Status.INTERNAL_SERVER_ERROR);
+        }
 
         return builder.build();
     }
@@ -102,9 +107,9 @@ public class BowerRegistryRestService {
     @Produces(MediaType.APPLICATION_JSON)
     public Response searchPackages(@PathParam("name") String name) {
         ResponseBuilder builder = Response.ok();
-        
+
         builder.entity(registry.search(name));
-        
+
         return builder.build();
     }
 }

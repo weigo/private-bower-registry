@@ -55,11 +55,11 @@ public class FileBackedBowerRegistry implements BowerRegistry {
 
     private void savePackagesToFile() {
         try {
-            File newPackageStore = File.createTempFile("bowerPackages", ".properties", baseDir);
+            File newPackageStore = File.createTempFile(BOWER_PACKAGES, "", baseDir);
             Writer storeWriter = new FileWriter(newPackageStore);
 
             for (BowerPackage bowerPackage : delegate.getAllPackages()) {
-                storeWriter.append(bowerPackage.getName()).append("=").append(bowerPackage.getURL()).append("\n");
+                storeWriter.append(bowerPackage.getName()).append("=").append(bowerPackage.getUrl()).append("\n");
             }
 
             storeWriter.close();

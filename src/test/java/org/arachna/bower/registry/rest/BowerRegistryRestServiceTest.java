@@ -77,7 +77,7 @@ public class BowerRegistryRestServiceTest {
             }
 
             @Override
-            public String getURL() {
+            public String getUrl() {
                 // TODO Auto-generated method stub
                 return null;
             }
