@@ -51,11 +51,11 @@ public class RemoteBowerRegistry implements BowerRegistry {
 
     /**
      * Create an instance of a remote bower registry using the given URL.
-     * 
+     *
      * @param remoteRegistryUrl
      *            URL to remote bower registry.
      */
-    public RemoteBowerRegistry(String remoteRegistryUrl, String proxyUrl) {
+    public RemoteBowerRegistry(final String remoteRegistryUrl, final String proxyUrl) {
         if (StringUtils.isEmpty(remoteRegistryUrl)) {
             throw new IllegalArgumentException("remote bower repository URL must not be empty!");
         }
@@ -64,11 +64,11 @@ public class RemoteBowerRegistry implements BowerRegistry {
         try {
             url = new URL(remoteRegistryUrl);
 
-            if (!(url.getProtocol().matches("https?"))) {
+            if (!url.getProtocol().matches("https?")) {
                 throw new IllegalArgumentException("remote bower repository URL must use http or https as protocol!");
             }
         }
-        catch (MalformedURLException e) {
+        catch (final MalformedURLException e) {
             throw new IllegalArgumentException(e);
         }
 
@@ -76,8 +76,8 @@ public class RemoteBowerRegistry implements BowerRegistry {
         client = newHttpClient(proxyUrl);
     }
 
-    Client newHttpClient(String proxyAddress) {
-        ClientConfig cc = new ClientConfig();
+    Client newHttpClient(final String proxyAddress) {
+        final ClientConfig cc = new ClientConfig();
 
         if (StringUtils.isNotEmpty(proxyAddress)) {
             cc.property(ClientProperties.PROXY_URI, proxyAddress);
@@ -89,7 +89,7 @@ public class RemoteBowerRegistry implements BowerRegistry {
 
     @Override
     public Collection<BowerPackage> getAllPackages() {
-        return executeRequest1("");
+        return queryCollectionOfBowerPackages("");
     }
 
     @Override
@@ -103,11 +103,11 @@ public class RemoteBowerRegistry implements BowerRegistry {
         BowerPackage bowerPackage = cache.getPackage(packageName);
 
         if (bowerPackage == null) {
-            bowerPackage = executeRequest(packageName);
-        }
+            bowerPackage = queryOneBowerPackage(packageName);
 
-        if (bowerPackage != null) {
-            cache.register(bowerPackage);
+            if (bowerPackage != null) {
+                cache.register(bowerPackage);
+            }
         }
 
         return bowerPackage;
@@ -115,22 +115,34 @@ public class RemoteBowerRegistry implements BowerRegistry {
 
     @Override
     public Collection<BowerPackage> search(final String packageName) {
-        return executeRequest1("/search/" + packageName);
+        Collection<BowerPackage> packages = cache.search(packageName);
+
+        if (!packages.isEmpty()) {
+            return packages;
+        }
+
+        packages = queryCollectionOfBowerPackages("/search/" + packageName);
+
+        for (final BowerPackage bowerPackage : packages) {
+            cache.register(bowerPackage);
+        }
+
+        return packages;
     }
 
-    private BowerPackage executeRequest(String path) {
+    private BowerPackage queryOneBowerPackage(final String path) {
         final WebTarget target = client.target(remoteRegistryUrl);
 
-        BowerPackageDescriptor descriptor =
+        final BowerPackageDescriptor descriptor =
             target.path(path).request(MediaType.APPLICATION_JSON_TYPE).get(new GenericType<BowerPackageDescriptor>() {
             });
 
         return descriptor;
     }
 
-    private Collection<BowerPackage> executeRequest1(String path) {
+    private Collection<BowerPackage> queryCollectionOfBowerPackages(final String path) {
         final WebTarget target = client.target(remoteRegistryUrl);
-        Collection<BowerPackage> packages = new ArrayList<BowerPackage>();
+        final Collection<BowerPackage> packages = new ArrayList<BowerPackage>();
         packages.addAll(target.path(path).request(MediaType.APPLICATION_JSON_TYPE)
             .get(new GenericType<Collection<BowerPackageDescriptor>>() {
             }));
