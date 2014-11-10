@@ -11,6 +11,8 @@ import java.io.Writer;
 import java.util.Collection;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.arachna.bower.registry.BowerPackage;
 import org.arachna.bower.registry.BowerRegistry;
@@ -35,10 +37,20 @@ public class FileBackedBowerRegistry implements BowerRegistry {
     /**
      * Folder to use as store for registered packages.
      */
-    private File baseDir;
+    private final File baseDir;
 
+    /**
+     * Create an instance of a {@link BowerRegistry} that persists its registered {@link BowerPackages} to a file in the given directory.
+     * The registry parameter is used to delegate all operations to.
+     * 
+     * @param delegate
+     *            bower registry to delegate to.
+     * @param baseDir
+     *            folder to use when persisting registered packages.
+     */
     public FileBackedBowerRegistry(BowerRegistry delegate, File baseDir) {
         this.delegate = delegate;
+        this.baseDir = baseDir;
     }
 
     @Override
@@ -54,6 +66,8 @@ public class FileBackedBowerRegistry implements BowerRegistry {
     }
 
     private void savePackagesToFile() {
+        File oldPackageStore = new File(baseDir, BOWER_PACKAGES);
+
         try {
             File newPackageStore = File.createTempFile(BOWER_PACKAGES, "", baseDir);
             Writer storeWriter = new FileWriter(newPackageStore);
@@ -63,17 +77,16 @@ public class FileBackedBowerRegistry implements BowerRegistry {
             }
 
             storeWriter.close();
-            File oldPackageStore = new File(baseDir, BOWER_PACKAGES);
 
             if (oldPackageStore.exists()) {
                 oldPackageStore.delete();
-
-                newPackageStore.renameTo(oldPackageStore);
             }
+
+            newPackageStore.renameTo(oldPackageStore);
         }
         catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE,
+                String.format("An error occured persisting registered bower packages to '%s'.", oldPackageStore.getAbsolutePath()), e);
         }
     }
 
@@ -103,5 +116,7 @@ public class FileBackedBowerRegistry implements BowerRegistry {
             BowerPackage bowerPackage = new BowerPackageDescriptor((String)entry.getKey(), (String)entry.getValue());
             this.delegate.register(bowerPackage);
         }
+
+        packages.close();
     }
 }

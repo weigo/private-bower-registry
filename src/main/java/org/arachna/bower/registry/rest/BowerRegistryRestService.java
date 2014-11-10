@@ -5,7 +5,6 @@ package org.arachna.bower.registry.rest;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.UnknownHostException;
 
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
@@ -24,6 +23,8 @@ import org.arachna.bower.registry.impl.RegistryHolder;
 import org.arachna.bower.registry.model.BowerPackageDescriptor;
 
 /**
+ * REST service for communication with <code>bower</code>.
+ * 
  * @author Dirk Weigenand
  */
 @Path("/packages")
@@ -85,6 +86,13 @@ public class BowerRegistryRestService {
         return Response.created(new URI("/packages/" + name)).build();
     }
 
+    /**
+     * Get URL for package name.
+     * 
+     * @param name
+     *            name of bower package
+     * @return URL of package or {@see Status#NOT_FOUND} when no package could be found.
+     */
     @GET
     @Path("/{name}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -102,6 +110,13 @@ public class BowerRegistryRestService {
         return builder.build();
     }
 
+    /**
+     * Lookup bower packages by (part of its) name.
+     * 
+     * @param name
+     *            name of bower package to look up.
+     * @return list of bower packages found, may be empty.
+     */
     @GET
     @Path("/search/{name}")
     @Produces(MediaType.APPLICATION_JSON)
