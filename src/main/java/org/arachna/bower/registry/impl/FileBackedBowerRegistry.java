@@ -4,6 +4,7 @@
 package org.arachna.bower.registry.impl;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
@@ -118,5 +119,28 @@ public class FileBackedBowerRegistry implements BowerRegistry {
         }
 
         packages.close();
+    }
+
+    /**
+     * Factory method for a {@see FileBackedBowerRegistry}.
+     * 
+     * @param registryBaseDir
+     * @return
+     */
+    static BowerRegistry create(File registryBaseDir, BowerRegistry delegate) {
+        File packages = new File(registryBaseDir, BOWER_PACKAGES);
+        FileBackedBowerRegistry bowerRegistry = new FileBackedBowerRegistry(delegate, registryBaseDir);
+
+        if (packages.exists()) {
+            try {
+                bowerRegistry.load(new FileReader(packages));
+            }
+            catch (IOException e) {
+                Logger.getLogger(FileBackedBowerRegistry.class.getName()).log(Level.SEVERE,
+                    String.format("An error occured reading packages from '%s'.", packages.getAbsolutePath()), e);
+            }
+        }
+
+        return bowerRegistry;
     }
 }
