@@ -5,7 +5,6 @@ package org.arachna.bower.registry.servlet;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
-import javax.servlet.annotation.WebListener;
 
 import org.arachna.bower.registry.impl.RegistryBuilder;
 import org.arachna.bower.registry.impl.RegistryHolder;
@@ -15,7 +14,6 @@ import org.arachna.bower.registry.impl.RegistryHolder;
  * 
  * @author Dirk Weigenand
  */
-@WebListener
 public class ContextListener implements ServletContextListener {
     @Override
     public void contextDestroyed(ServletContextEvent arg0) {
