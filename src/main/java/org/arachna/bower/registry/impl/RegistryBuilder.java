@@ -28,6 +28,11 @@ import org.arachna.bower.registry.BowerRegistry;
  */
 public class RegistryBuilder {
     /**
+     * Logger.
+     */
+    private final Logger logger = Logger.getLogger(getClass().getName());
+
+    /**
      * Build a {@link BowerRegistry} using the configuration.
      * 
      * @return a bower registry using a file backed registry and the remote bower registry from the configuration file.
@@ -54,7 +59,7 @@ public class RegistryBuilder {
             config = new ConfigurationReader(homeDirectory.getAbsolutePath()).read(configReader);
         }
         catch (IOException e) {
-            Logger.getLogger(getClass().getName()).log(Level.WARNING,
+            logger.log(Level.WARNING,
                 String.format("Could not read registry configuration file '%s'! Using defaults.", configurationFile.getAbsolutePath()));
             config = new Configuration(new Properties(), homeDirectory.getAbsolutePath());
             writeDefaultConfiguration(configurationFile, config);
@@ -65,33 +70,38 @@ public class RegistryBuilder {
 
     private File getHomeDirectory() {
         String home = null;
+        logger.info("Determine home directory...");
         List<String> homeEnvironmentVariables = Arrays.asList("HOME", "HOMEPATH", "USERPROFILE");
 
         for (String env : homeEnvironmentVariables) {
             home = System.getenv(env);
+            logger.info(String.format("Determine home directory from '%s'...", env));
 
             if (home != null) {
+                logger.info(String.format("Found home directory in environment variable '%s': %s.", env, home));
                 break;
             }
         }
 
         if (home == null) {
-            throw new IllegalStateException(String.format("Unable to determine home directory from environment variables: %s.",
-                homeEnvironmentVariables));
+            String message = String.format("Unable to determine home directory from environment variables: %s.", homeEnvironmentVariables);
+            logger.severe(message);
+            throw new IllegalStateException(message);
         }
-        File homeDirectory = new File(home);
-        return homeDirectory;
+
+        return new File(home);
     }
 
     private void writeDefaultConfiguration(File configurationFile, Configuration config) {
         Writer configWriter = null;
 
         try {
+            logger.info(String.format("Creating default configuration in '%s'.", configurationFile.getAbsolutePath()));
             configWriter = new FileWriter(configurationFile);
             new ConfigurationWriter(config).write(configWriter);
         }
         catch (IOException e) {
-            Logger.getLogger(getClass().getName()).log(Level.SEVERE,
+            logger.log(Level.SEVERE,
                 String.format("Could not write default registry configuration file '%s'!", configurationFile.getAbsolutePath()), e);
         }
         finally {
@@ -100,7 +110,7 @@ public class RegistryBuilder {
                     configWriter.close();
                 }
                 catch (IOException e) {
-                    Logger.getLogger(getClass().getName()).log(Level.SEVERE,
+                    logger.log(Level.SEVERE,
                         String.format("Could not write default registry configuration file '%s'!", configurationFile.getAbsolutePath()), e);
                 }
             }
@@ -145,7 +155,7 @@ public class RegistryBuilder {
                 registries.add(new RemoteBowerRegistry(registry, config.getProxyUrl()));
             }
             catch (IllegalArgumentException e) {
-                Logger.getLogger(getClass().getName()).log(Level.SEVERE, "An error occured configuring the remote bower repositories.", e);
+                logger.log(Level.SEVERE, "An error occured configuring the remote bower repositories.", e);
             }
         }
 
@@ -181,17 +191,24 @@ public class RegistryBuilder {
     private void createFolderIfNotExistsAndVerify(File folder) {
         if (!folder.exists()) {
             if (!folder.mkdir()) {
-                throw new IllegalStateException(String.format("Could not create folder '%s'", folder.getAbsolutePath()));
+                String msg = String.format("Could not create folder '%s'", folder.getAbsolutePath());
+                logger.severe(msg);
+                throw new IllegalStateException(msg);
             }
         }
 
         if (!folder.isDirectory()) {
-            throw new IllegalStateException("The path '%s' does not a denote directory!");
+            String msg = String.format("The path '%s' does not a denote directory!", folder.getAbsolutePath());
+            logger.severe(msg);
+            throw new IllegalStateException(msg);
         }
 
         if (!folder.canRead() || !folder.canWrite() || !folder.canExecute()) {
-            throw new IllegalStateException(
-                "Please check your permissions on the folder '%s'! Permissions should be read, write and execute.");
+            String msg =
+                String.format("Please check your permissions on the folder '%s'! Permissions should be read, write and execute.",
+                    folder.getAbsolutePath());
+            logger.severe(msg);
+            throw new IllegalStateException(msg);
         }
     }
 
