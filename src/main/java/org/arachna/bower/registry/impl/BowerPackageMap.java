@@ -32,9 +32,10 @@ public class BowerPackageMap implements BowerRegistry {
 
     @Override
     public void register(final BowerPackage bowerPackage) {
-        if (packages.putIfAbsent(bowerPackage.getName(), bowerPackage) != null) {
-            throw new IllegalArgumentException(String.format("package '%s' was already registered.", bowerPackage.getName()));
-        }
+        packages.put(bowerPackage.getName(), bowerPackage);
+        // if (packages.putIfAbsent(bowerPackage.getName(), bowerPackage) != null) {
+        // throw new IllegalArgumentException(String.format("package '%s' was already registered.", bowerPackage.getName()));
+        // }
     }
 
     @Override
